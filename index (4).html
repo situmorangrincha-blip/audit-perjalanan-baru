@@ -1,0 +1,626 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JKS Time Planner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+<style>
+:root{
+  --bg:#EDF1F4; --panel:#fff; --ink:#10202B; --mut:#5B6B78; --line:#D5DDE3; --line2:#E7ECF0;
+  --blue:#1D5FD1; --blue-s:#E4EDFC; --org:#E8590C; --org-s:#FDEBDD;
+  --ok:#2B9A66; --ok-s:#E1F4EA; --warn:#9A6700; --warn-s:#FFF3CF; --bad:#C73A30; --bad-s:#FCE6E3;
+  --r:10px;
+  --head:'Bricolage Grotesque','Segoe UI',system-ui,sans-serif;
+  --body:'Figtree','Segoe UI',system-ui,sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:13.5px/1.45 var(--body);-webkit-text-size-adjust:100%}
+h1,h2,h3{font-family:var(--head);margin:0;letter-spacing:-.01em}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 18px;background:var(--ink);color:#fff}
+.brand{display:flex;align-items:center;gap:10px}
+.brand b{font:700 17px var(--head);letter-spacing:-.01em}
+.brand span{color:#9FB1BF;font-size:12.5px}
+.app{display:grid;grid-template-columns:318px 1fr;gap:14px;padding:14px 18px 40px;align-items:start;max-width:1500px;margin:0 auto}
+.rail{display:flex;flex-direction:column;gap:10px;position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto;padding-right:2px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:12px}
+.card h2{font-size:14.5px;margin-bottom:8px}
+.drop{display:flex;gap:10px;align-items:center;border:1.5px dashed var(--line);border-radius:8px;padding:9px 10px;cursor:pointer;background:#FAFCFD;margin-bottom:7px}
+.drop:hover,.drop.over{border-color:var(--blue);background:var(--blue-s)}
+.drop.ok{border-style:solid;border-color:#BFE3D0;background:var(--ok-s)}
+.drop .ic{flex:none;width:30px;height:30px;border-radius:7px;background:var(--blue-s);color:var(--blue);display:grid;place-items:center;font-weight:700}
+.drop.ok .ic{background:var(--ok);color:#fff}
+.drop b{display:block;font-weight:600}
+.drop small{color:var(--mut);display:block;line-height:1.3}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.fld{display:flex;flex-direction:column;gap:3px;min-width:0}
+.fld.full{grid-column:1/-1}
+.fld label{font-size:12px;color:var(--mut);font-weight:500}
+.fld input,.fld select{border:1px solid var(--line);border-radius:7px;padding:6px 8px;background:#fff;min-width:0;width:100%}
+.chk{display:flex;gap:7px;align-items:flex-start;grid-column:1/-1;font-size:12.5px}
+.chk input{margin-top:3px}
+.smlist{display:flex;flex-direction:column;gap:2px;max-height:250px;overflow:auto;margin:0 -4px}
+.sm{display:flex;gap:8px;align-items:center;padding:4px;border-radius:6px;cursor:pointer}
+.sm:hover{background:var(--bg)}
+.sm .n{flex:1;min-width:0}
+.sm .n b{font-weight:600;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sm .n small{color:var(--mut);font-size:11.5px}
+.sm .tg{font-size:11px;padding:1px 6px;border-radius:20px;background:var(--warn-s);color:var(--warn);white-space:nowrap}
+.mini{background:none;border:0;color:var(--blue);cursor:pointer;padding:0;font-weight:600;font-size:12px}
+.btn{border:0;border-radius:8px;padding:9px 12px;font-weight:600;cursor:pointer;background:var(--blue);color:#fff;width:100%}
+.btn:hover{background:#174FB0}
+.btn:disabled{background:#AEB9C2;cursor:not-allowed}
+.btn.sec{background:#fff;color:var(--ink);border:1px solid var(--line);width:auto}
+.btn.sec:hover{background:var(--bg)}
+.btn.sm2{padding:6px 10px;font-size:12.5px;width:auto}
+.btn.org{background:var(--org)} .btn.org:hover{background:#C94A07}
+.prog{height:6px;background:var(--line2);border-radius:4px;overflow:hidden;margin-top:7px;display:none}
+.prog i{display:block;height:100%;width:0;background:var(--blue);transition:width .25s}
+.prog-t{font-size:12px;color:var(--mut);margin-top:4px;display:none}
+details.card summary{cursor:pointer;font:600 14.5px var(--head)}
+details.card[open] summary{margin-bottom:8px}
+.note{font-size:12px;color:var(--mut)}
+.res{margin-top:6px;font-size:12.5px;background:var(--bg);border-radius:7px;padding:7px 9px}
+/* stage */
+.stage{min-width:0}
+.bar{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:9px 12px;margin-bottom:10px}
+.bar .st b{font:700 16px var(--head)} .bar .st{display:flex;align-items:baseline;gap:5px;color:var(--mut)}
+.bar .sp{flex:1}
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:8px}
+.chip{flex:none;border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 10px;cursor:pointer;text-align:left;line-height:1.25}
+.chip b{display:block;font-weight:600;white-space:nowrap}
+.chip small{color:var(--mut);font-size:11.5px}
+.chip.on{background:var(--ink);color:#fff;border-color:var(--ink)} .chip.on small{color:#A9BAC7}
+.chip .dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;background:var(--line)}
+.dot.ok{background:var(--ok)!important}.dot.err{background:var(--bad)!important}.dot.est{background:var(--org)!important}
+.dayhead{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:flex-end;justify-content:space-between;margin-bottom:8px}
+.dayhead h3{font-size:20px}
+.kp{display:flex;flex-wrap:wrap;gap:6px 14px;color:var(--mut)}
+.kp b{color:var(--ink);font-weight:600}
+.late{color:var(--bad)!important}
+.tl{margin:6px 0 4px}
+.tl .strip{display:flex;height:20px;border-radius:5px;overflow:hidden;background:var(--line2)}
+.tl .strip i{display:block;height:100%;min-width:1px;border-right:1px solid #fff}
+.tl .o{background:var(--blue)} .tl .t{background:var(--org)}
+.tl .ax{display:flex;justify-content:space-between;color:var(--mut);font-size:11.5px;margin-top:3px}
+.lg{display:flex;gap:12px;font-size:11.5px;color:var(--mut);margin-bottom:8px}
+.lg s{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px;text-decoration:none}
+.tbw{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);overflow:auto}
+table{border-collapse:collapse;width:100%;min-width:760px}
+th{font:600 12px var(--body);color:var(--mut);text-align:left;padding:7px 8px;background:#F6F8FA;border-bottom:1px solid var(--line);position:sticky;top:0;white-space:nowrap}
+td{padding:5px 8px;border-bottom:1px solid var(--line2);vertical-align:middle}
+tr:last-child td{border-bottom:0}
+td.r,th.r{text-align:right;font-variant-numeric:tabular-nums}
+td.nm b{font-weight:600} td.nm small{display:block;color:var(--mut);font-size:11.5px}
+td.ad{max-width:240px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tag{display:inline-block;font-size:10.5px;font-weight:600;border-radius:4px;padding:0 5px;margin-left:5px;vertical-align:1px}
+.tag.p{background:var(--org-s);color:var(--org)} .tag.x{background:var(--warn-s);color:var(--warn)} .tag.d{background:var(--line2);color:var(--mut)}
+.mu{color:var(--mut);font-size:11.5px}
+.alert{border-radius:8px;padding:9px 11px;margin-bottom:8px;font-size:12.5px}
+.alert.err{background:var(--bad-s);color:#8E2119;border:1px solid #F3C3BE}
+.alert.est{background:var(--org-s);color:#8A3500;border:1px solid #F6CDAE}
+.alert.warn{background:var(--warn-s);color:var(--warn);border:1px solid #EFDCA2}
+.alert .ac{margin-top:6px;display:flex;gap:6px}
+.empty{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:26px 22px}
+.empty h1{font-size:26px;max-width:22ch;line-height:1.15;margin-bottom:8px}
+.empty p{max-width:62ch;color:var(--mut);margin:0 0 14px}
+.empty .tl{max-width:560px}
+.toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:8px 14px;border-radius:8px;font-size:12.5px;display:none;max-width:90vw;z-index:9}
+@media (max-width:900px){
+  .app{grid-template-columns:1fr;padding:10px}
+  .rail{position:static;max-height:none}
+  .top{padding:9px 12px} .brand span{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true"><path d="M5 20 C9 20 9 6 13 6 S17 20 21 20" fill="none" stroke="#7FA6F0" stroke-width="2.2" stroke-linecap="round"/><circle cx="5" cy="20" r="3" fill="#E8590C"/><circle cx="13" cy="6" r="3" fill="#fff"/><circle cx="21" cy="20" r="3" fill="#fff"/></svg>
+    <b>JKS Time Planner</b><span>Jam kunjungan dan durasi perjalanan per salesman</span>
+  </div>
+</header>
+
+<main class="app">
+<aside class="rail">
+  <section class="card">
+    <h2>Data</h2>
+    <label class="drop" id="dJks"><input type="file" accept=".xlsx,.xls" hidden><span class="ic">J</span><span><b>JKS Genap</b><small id="tJks">Pilih file JKS SP Kebayoran (.xlsx)</small></span></label>
+    <label class="drop" id="dRfb"><input type="file" accept=".xlsx,.xls" hidden><span class="ic">R</span><span><b>Route Feedback</b><small id="tRfb">Pilih file Route Feedback (.xlsx)</small></span></label>
+  </section>
+
+  <section class="card">
+    <h2>Aturan</h2>
+    <div class="grid2">
+      <div class="fld full"><label for="sWeek">Baris JKS yang dipakai</label>
+        <select id="sWeek">
+          <option value="genap">Minggu genap (mingguan + Minggu 2&amp;4)</option>
+          <option value="ganjil">Minggu ganjil (mingguan + Minggu 1&amp;3)</option>
+          <option value="wk">Mingguan saja ([n]HARI)</option>
+          <option value="g24">Minggu 2&amp;4 saja</option>
+          <option value="all">Semua baris</option>
+        </select></div>
+      <div class="fld"><label for="sStatus">Status toko</label>
+        <select id="sStatus"><option value="all">Semua</option><option value="ACT">ACT saja</option></select></div>
+      <div class="fld"><label for="sOut">Buang durasi di atas (menit)</label><input id="sOut" type="number" min="10" value="90"></div>
+      <div class="fld"><label for="sStart">Jam mulai bila tanpa RFB</label><input id="sStart" type="time" value="08:00"></div>
+      <div class="fld"><label for="sEnd">Batas jam pulang</label><input id="sEnd" type="time" value="17:00"></div>
+      <label class="chk"><input id="sSkip" type="checkbox" checked><span>Durasi rata-rata tidak menghitung kunjungan toko tutup dan agenda lainnya</span></label>
+      <label class="chk"><input id="sAnch" type="checkbox"><span>Toko pertama tidak boleh kunjungan toko tutup atau agenda lainnya</span></label>
+      <div class="fld"><label for="sFactor">Faktor koreksi waktu</label><input id="sFactor" type="number" step="0.05" min="0.5" value="1.3"></div>
+      <div class="fld"><label for="sBase">Server OSRM</label><input id="sBase" type="text" value="https://router.project-osrm.org"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2 style="display:flex;justify-content:space-between;align-items:baseline">Salesman <span><button class="mini" id="selAll">Semua</button> / <button class="mini" id="selNone">Kosongkan</button></span></h2>
+    <div class="smlist" id="smList"><div class="note">Upload file JKS dulu.</div></div>
+  </section>
+
+  <div>
+    <button class="btn" id="go" disabled>Hitung rute</button>
+    <div class="prog" id="prog"><i></i></div>
+    <div class="prog-t" id="progT"></div>
+  </div>
+
+  <details class="card">
+    <summary>Kalibrasi faktor waktu</summary>
+    <p class="note" style="margin:0 0 8px">OSRM publik menghitung waktu mobil tanpa macet. Upload file Rute Kunjungan (hasil RutaMap) untuk membandingkan, lalu pakai faktor yang disarankan.</p>
+    <label class="drop" id="dCal" style="margin-bottom:6px"><input type="file" accept=".xlsx,.xls" hidden><span class="ic">K</span><span><b>Rute Kunjungan</b><small id="tCal">Pilih file (.xlsx)</small></span></label>
+    <div class="res" id="calRes" style="display:none"></div>
+  </details>
+</aside>
+
+<section class="stage" id="stage"></section>
+</main>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+/* ===== CORE:START ===== */
+const HARI=['Senin','Selasa','Rabu','Kamis','Jumat','Sabtu','Minggu'];
+const HARI_KEY={senin:0,selasa:1,rabu:2,kamis:3,jumat:4,sabtu:5,minggu:6};
+const BULAN=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+const OUT_KEYS=[3,4,5,6,7,8,9,10,15,20,25,30,35,40,45,60];
+const TRV_KEYS=[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,30,40,50,60,70,80,90,100];
+const norm=s=>String(s==null?'':s).toLowerCase().replace(/[^a-z0-9]/g,'');
+const isDate=v=>Object.prototype.toString.call(v)==='[object Date]';
+const str=v=>String(v==null?'':v).trim();
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+
+function mkGet(headers,aliases){
+  const idx={}; headers.forEach(h=>{idx[norm(h)]=h;});
+  const map={};
+  for(const k in aliases){ for(const a of aliases[k]){ if(idx[a]!==undefined){map[k]=idx[a];break;} } }
+  return {map,get:(row,k)=>map[k]===undefined?'':row[map[k]]};
+}
+function toMin(v){
+  if(v==null||v==='') return 0;
+  if(isDate(v)) return v.getHours()*60+v.getMinutes()+v.getSeconds()/60;
+  if(typeof v==='number') return Math.round((v%1)*1440*60)/60;
+  const m=String(v).match(/(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+  return m? (+m[1])*60+(+m[2])+(m[3]?(+m[3])/60:0) : 0;
+}
+function parseDate(v){
+  let y,m,d;
+  if(isDate(v)){ const x=new Date(v.getTime()+12*3600e3); y=x.getFullYear();m=x.getMonth()+1;d=x.getDate(); }
+  else{
+    const s=str(v); let a;
+    if((a=s.match(/^(\d{4})-(\d{2})-(\d{2})/))){y=+a[1];m=+a[2];d=+a[3];}
+    else if((a=s.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})/))){d=+a[1];m=+a[2];y=+a[3];}
+    else return null;
+  }
+  return y+'-'+String(m).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+}
+const wdOf=ds=>(new Date(ds+'T00:00:00Z').getUTCDay()+6)%7;
+const fmtT=m=>{m=Math.round(m);return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');};
+const fmtD=ds=>{const p=ds.split('-');return (+p[2])+' '+BULAN[+p[1]-1];};
+const median=a=>{if(!a.length)return null;const s=[...a].sort((x,y)=>x-y),h=s.length>>1;return s.length%2?s[h]:(s[h-1]+s[h])/2;};
+const nearestKey=(v,keys)=>{let b=keys[0],bd=1e9;for(const k of keys){const d=Math.abs(k-v);if(d<bd||(d===bd&&k>b)){b=k;bd=d;}}return b;};
+const ceilKey=(v,keys)=>{for(const k of keys){if(k>=v)return k;}return keys[keys.length-1];};
+function hav(a,b){const p=Math.PI/180,dl=(b.lat-a.lat)*p,dn=(b.lon-a.lon)*p;
+  const x=Math.sin(dl/2)**2+Math.cos(a.lat*p)*Math.cos(b.lat*p)*Math.sin(dn/2)**2;return 12742*Math.asin(Math.sqrt(x));}
+const validGeo=r=>Number.isFinite(r.lat)&&Number.isFinite(r.lon)&&r.lat>-11.5&&r.lat<6.5&&r.lon>94&&r.lon<142;
+const isNonVisit=a=>{a=String(a||'').toLowerCase();return a.includes('toko tutup')||a.includes('agenda lain');};
+
+function parseHari(h){
+  const s=String(h||'').toLowerCase().trim(); let wd=null;
+  const m=s.match(/^\[\d+\]\s*([a-z']+)/)||s.match(/rute hari\s+([a-z']+)/)||s.match(/(senin|selasa|rabu|kamis|jum'?at|sabtu|minggu)/);
+  if(m){const w=m[1].replace("'",'');if(HARI_KEY[w]!==undefined)wd=HARI_KEY[w];}
+  let tipe='wk';
+  if(/2\s*&\s*4|2\s*dan\s*4/.test(s))tipe='g24'; else if(/1\s*&\s*3|1\s*dan\s*3/.test(s))tipe='g13';
+  return {wd,tipe};
+}
+const weekOk=(t,mode)=>mode==='all'||(mode==='genap'&&(t==='wk'||t==='g24'))||(mode==='ganjil'&&(t==='wk'||t==='g13'))||(mode==='wk'&&t==='wk')||(mode==='g24'&&t==='g24');
+
+const JKS_AL={depo:['depo','namadepo'],idS:['idsalesman','niksales','nik'],nama:['namasalesman','namasales'],hari:['harikunj','harikunjungan'],urut:['nourut','nourutjks'],idP:['idpelanggan','idcustomer'],namaP:['namapelanggan','namacustomer'],alamat:['alamat'],status:['status'],lat:['latitude','lat'],lon:['longitude','long','lng'],tipe:['tipesales']};
+function readJKS(rows){
+  if(!rows.length) throw new Error('File JKS kosong.');
+  const g=mkGet(Object.keys(rows[0]),JKS_AL);
+  const miss=['idS','nama','hari','idP','namaP','lat','lon'].filter(k=>!g.map[k]);
+  if(miss.length) throw new Error('Kolom JKS tidak ditemukan: '+miss.join(', ')+'. Pastikan ini file JKS Genap.');
+  return rows.map(r=>{const h=parseHari(g.get(r,'hari'));return{
+    depo:str(g.get(r,'depo')),idS:str(g.get(r,'idS')),nama:str(g.get(r,'nama')),tipeSales:str(g.get(r,'tipe')),
+    wd:h.wd,tipe:h.tipe,hari:str(g.get(r,'hari')),urut:parseFloat(g.get(r,'urut'))||0,
+    idP:str(g.get(r,'idP')),namaP:str(g.get(r,'namaP')),alamat:str(g.get(r,'alamat')),status:str(g.get(r,'status')).toUpperCase(),
+    lat:parseFloat(String(g.get(r,'lat')).replace(',','.')),lon:parseFloat(String(g.get(r,'lon')).replace(',','.'))};})
+    .filter(x=>x.idP&&x.idS&&x.wd!=null);
+}
+const RFB_AL={tgl:['tanggal','date'],idS:['idsalesman'],nama:['namasalesman'],idC:['idcustomer','idpelanggan'],namaC:['namacustomer','namapelanggan'],mulai:['waktumulai'],akhir:['waktuakhir'],alasan:['alasan']};
+function readRFB(rows){
+  if(!rows.length) throw new Error('File Route Feedback kosong.');
+  const g=mkGet(Object.keys(rows[0]),RFB_AL);
+  const miss=['tgl','idS','idC','mulai','akhir'].filter(k=>!g.map[k]);
+  if(miss.length) throw new Error('Kolom Route Feedback tidak ditemukan: '+miss.join(', ')+'.');
+  return rows.map(r=>({dateStr:parseDate(g.get(r,'tgl')),idS:str(g.get(r,'idS')),nama:str(g.get(r,'nama')),idC:str(g.get(r,'idC')),
+    namaC:str(g.get(r,'namaC')),start:toMin(g.get(r,'mulai')),end:toMin(g.get(r,'akhir')),alasan:str(g.get(r,'alasan'))}))
+    .filter(x=>x.dateStr&&x.idC&&x.idS);
+}
+
+function buildDurModel(rfb,o){
+  const byC=new Map(),byS=new Map(),all=[];
+  for(const v of rfb){
+    if(!(v.start>0&&v.end>v.start)) continue;
+    const d=v.end-v.start; if(d>o.outlier) continue;
+    if(o.skipNonVisit&&isNonVisit(v.alasan)) continue;
+    (byC.get(v.idC)||byC.set(v.idC,[]).get(v.idC)).push(d);
+    (byS.get(v.idS)||byS.set(v.idS,new Map()).get(v.idS));
+    const m=byS.get(v.idS); (m.get(v.idC)||m.set(v.idC,[]).get(v.idC)).push(d);
+  }
+  const cust=new Map();
+  for(const [c,a] of byC){const avg=a.reduce((x,y)=>x+y,0)/a.length;cust.set(c,{avg,n:a.length,key:nearestKey(avg,OUT_KEYS)});all.push(avg);}
+  const salesKey=new Map();
+  for(const [s,m] of byS){const avgs=[...m.values()].map(a=>a.reduce((x,y)=>x+y,0)/a.length);salesKey.set(s,nearestKey(median(avgs),OUT_KEYS));}
+  const globalKey=all.length?nearestKey(median(all),OUT_KEYS):10;
+  return {cust,salesKey,globalKey,
+    durFor(idC,idS){
+      const c=cust.get(idC); if(c) return {key:c.key,src:'rfb',n:c.n,avg:c.avg};
+      if(salesKey.has(idS)) return {key:salesKey.get(idS),src:'salesman',n:0};
+      return {key:globalKey,src:all.length?'global':'default',n:0};
+    }};
+}
+
+function planDays(jks,rfb,selIds,o){
+  const rows=jks.filter(r=>weekOk(r.tipe,o.week)&&(o.status==='all'||r.status==='ACT'));
+  const anyGeo=new Map(),meta=new Map();
+  for(const r of jks){ if(validGeo(r)&&!anyGeo.has(r.idP))anyGeo.set(r.idP,r); if(!meta.has(r.idS))meta.set(r.idS,{idS:r.idS,nama:r.nama,tipeSales:r.tipeSales,depo:r.depo}); }
+  const vis=new Map(),dates=new Map(),rfbNama=new Map();
+  for(const v of rfb){
+    const k=v.idS+'|'+v.dateStr; (vis.get(k)||vis.set(k,[]).get(k)).push(v);
+    (dates.get(v.idS)||dates.set(v.idS,new Set()).get(v.idS)).add(v.dateStr); rfbNama.set(v.idS,v.nama);
+  }
+  const mkStop=r=>({idP:r.idP,namaP:r.namaP,alamat:r.alamat,lat:r.lat,lon:r.lon,urut:r.urut,outsidePlan:false});
+  const out=[];
+  for(const idS of selIds){
+    const m=meta.get(idS); if(!m) continue;
+    const mine=rows.filter(r=>r.idS===idS), days=[];
+    for(let wd=0;wd<7;wd++){
+      const dr=mine.filter(r=>r.wd===wd).sort((a,b)=>a.urut-b.urut); if(!dr.length) continue;
+      const seen=new Set(),stops=[],bad=[],warn=[];
+      for(const r of dr){ if(seen.has(r.idP))continue; seen.add(r.idP); if(validGeo(r))stops.push(mkStop(r)); else bad.push(r.namaP||r.idP); }
+      let anchor=null,dateStr=null;
+      for(const d of [...(dates.get(idS)||[])].filter(d=>wdOf(d)===wd).sort()){
+        let list=(vis.get(idS+'|'+d)||[]).filter(v=>v.start>0);
+        if(o.anchorSkip) list=list.filter(v=>!isNonVisit(v.alasan));
+        list.sort((a,b)=>a.start-b.start||a.end-b.end);
+        if(list.length){anchor=list[0];dateStr=d;break;}
+      }
+      let startMin=o.startFallback,anchorInfo={src:'fallback'};
+      if(anchor){
+        const i=stops.findIndex(s=>s.idP===anchor.idC);
+        if(i>=0){const [s]=stops.splice(i,1);stops.unshift(s);anchorInfo={src:'rfb',start:anchor.start,date:dateStr,namaC:anchor.namaC,outsidePlan:false};}
+        else{
+          const gr=anyGeo.get(anchor.idC);
+          if(gr){const s=mkStop(gr);s.outsidePlan=true;stops.unshift(s);anchorInfo={src:'rfb',start:anchor.start,date:dateStr,namaC:anchor.namaC||gr.namaP,outsidePlan:true};}
+          else warn.push('Toko pertama dari Route Feedback ('+(anchor.namaC||anchor.idC)+') tidak punya geotag di JKS. Dipakai toko No Urut terkecil sebagai titik awal.');
+        }
+        if(anchorInfo.src==='rfb') startMin=anchor.start;
+      }
+      if(!stops.length) continue;
+      if(bad.length) warn.push(bad.length+' toko dibuang karena geotag tidak valid: '+bad.slice(0,4).join(', ')+(bad.length>4?' dan lainnya':''));
+      days.push({wd,hari:HARI[wd],dateStr,anchor:anchorInfo,startMin,stops,warn,status:'pending'});
+    }
+    if(days.length) out.push({...m,rfbNama:rfbNama.get(idS)||null,days});
+  }
+  return out;
+}
+
+async function osrmMatrix(coords,base,fetcher){
+  const path=coords.map(c=>c.lon.toFixed(6)+','+c.lat.toFixed(6)).join(';');
+  const url=base.replace(/\/+$/,'')+'/table/v1/driving/'+path+'?annotations=duration';
+  let last;
+  for(let t=0;t<3;t++){
+    try{
+      const res=await fetcher(url);
+      if(res.status===429){last=new Error('OSRM membatasi permintaan (HTTP 429).');await sleep(1500*(t+1));continue;}
+      if(!res.ok) throw new Error('OSRM HTTP '+res.status);
+      const j=await res.json();
+      if(j.code!=='Ok') throw new Error('OSRM: '+(j.message||j.code));
+      return j.durations;
+    }catch(e){ last=e; if(t<2) await sleep(800*(t+1)); }
+  }
+  throw new Error(last&&last.message&&last.message!=='Failed to fetch'?last.message:'Tidak bisa menjangkau server OSRM. Cek koneksi internet atau alamat server.');
+}
+const estMatrix=stops=>stops.map(a=>stops.map(b=>hav(a,b)*216));
+function nnOrder(M){
+  const n=M.length,vis=new Array(n).fill(false),ord=[0];vis[0]=true;
+  for(let k=1;k<n;k++){
+    const c=ord[ord.length-1];let b=-1,bd=Infinity;
+    for(let j=0;j<n;j++){ if(vis[j])continue; const d=M[c][j]==null?3600*3:M[c][j]; if(d<bd){bd=d;b=j;} }
+    vis[b]=true;ord.push(b);
+  }
+  return ord;
+}
+async function solveDay(day,idS,ctx){
+  const stops=day.stops,n=stops.length;
+  if(n>100) throw new Error('Satu hari berisi '+n+' toko, melebihi batas 100 titik OSRM.');
+  const M=day.useEst?estMatrix(stops):(n>1?await osrmMatrix(stops,ctx.base,ctx.fetcher):[[0]]);
+  const ord=nnOrder(M),rows=[];
+  let t=day.startMin,totOut=0,totTrv=0;
+  for(let k=0;k<n;k++){
+    const s=stops[ord[k]],d=ctx.durModel.durFor(s.idP,idS);
+    let leg=null,key=null;
+    if(k<n-1){const sec=M[ord[k]][ord[k+1]];leg=(sec==null?3600:sec)*ctx.factor/60;key=ceilKey(Math.max(1,Math.round(leg)),TRV_KEYS);}
+    const jam=t,selesai=t+d.key;
+    rows.push({seq:k,...s,isAnchor:k===0&&day.anchor.src==='rfb',dur:d,jam,selesai,leg,key});
+    totOut+=d.key; if(key!=null)totTrv+=key;
+    t=selesai+(key||0);
+  }
+  day.rows=rows;day.end=rows[n-1].selesai;day.totOut=totOut;day.totTrv=totTrv;
+  day.status=day.useEst?'est':'ok';day.err=null;
+}
+
+function descRow(r){
+  const p=[];
+  if(r.isAnchor)p.push('Toko pertama (RFB)'); else if(r.seq===0)p.push('Titik awal');
+  if(r.outsidePlan)p.push('Di luar JKS hari ini');
+  p.push(r.dur.src==='rfb'?'Durasi RFB '+r.dur.n+'x':r.dur.src==='salesman'?'Durasi median salesman':r.dur.src==='global'?'Durasi median umum':'Durasi default');
+  if(r.leg!=null)p.push('Tempuh asli '+r.leg.toFixed(1).replace('.',',')+' mnt');
+  return p.join('; ');
+}
+function buildWorkbook(ExcelJS,list){
+  const wb=new ExcelJS.Workbook(); wb.creator='JKS Time Planner';
+  const BLUE='FF00B0F0',YEL='FFFFFF00',F='Arial',thin={style:'thin',color:{argb:'FF000000'}};
+  const border={top:thin,left:thin,bottom:thin,right:thin};
+  const names=new Set();
+  const heads=['Depo','Nik Sales','Nama Sales','Hari Kunj','No Urut','Id Pelanggan','Nama Pelanggan','Alamat','Klasifikasi Durasi Dioutlet','Klasifikasi Durasi Perjalanan','','Jam  Berkunjung','Durasi di Outlet','Selesai Kunjungan','Durasi Perjalanan','Catatan'];
+  const yellowCols=[5,9,10,11];
+  for(const sm of list){
+    let nm=('JKS '+sm.nama).replace(/[\\\/\?\*\[\]:]/g,'').slice(0,28),k=2,base=nm;
+    while(names.has(nm.toLowerCase())){nm=base.slice(0,26)+' '+k++;}
+    names.add(nm.toLowerCase());
+    const ws=wb.addWorksheet(nm,{views:[{showGridLines:false}]});
+    [16,12,20,12,8,19,26,46,13,13,1.5,12,12,12,12,52].forEach((w,i)=>ws.getColumn(i+1).width=w);
+    const a1=ws.getCell('A1');a1.value='Time Management Salesman - '+(sm.tipeSales||'Salesman')+' - '+sm.nama;a1.font={name:F,size:16,bold:true};
+    const a2=ws.getCell('A2');a2.value='Note : Isi Kolom Warna Kuning';a2.font={name:F,size:10,bold:true};a2.fill={type:'pattern',pattern:'solid',fgColor:{argb:YEL}};
+    let hr=3;
+    for(const d of sm.days){
+      const h=ws.getRow(hr);h.height=45;
+      heads.forEach((t,i)=>{
+        const c=h.getCell(i+1);c.value=t;c.font={name:F,size:10,bold:true};
+        c.alignment={horizontal:'center',vertical:'middle',wrapText:true};
+        if(i<15){c.border=border;c.fill={type:'pattern',pattern:'solid',fgColor:{argb:yellowCols.includes(i+1)?YEL:BLUE}};}
+      });
+      if(d.status==='est'){const c=h.getCell(16);c.value='ESTIMASI garis lurus, bukan rute jalan';c.font={name:F,size:10,bold:true,color:{argb:'FFC00000'}};}
+      d.rows.forEach((r,i)=>{
+        const rn=hr+1+i,row=ws.getRow(rn),last=i===d.rows.length-1;
+        const put=(col,v,o={})=>{const c=row.getCell(col);c.value=v;c.font={name:F,size:10,bold:!!o.bold};c.border=border;
+          if(o.fill)c.fill={type:'pattern',pattern:'solid',fgColor:{argb:o.fill}};
+          if(o.center)c.alignment={horizontal:'center'};if(o.fmt)c.numFmt=o.fmt;return c;};
+        put(1,sm.depo);put(2,sm.idS);put(3,sm.nama);put(4,d.hari);
+        put(5,i,{fill:YEL,center:true});put(6,r.idP);put(7,r.namaP);put(8,r.alamat);
+        put(9,r.dur.key,{fill:YEL,center:true});
+        put(10,r.key==null?null:r.key,{fill:YEL,center:true});put(11,null,{fill:YEL});
+        if(i===0) put(12,r.jam/1440,{fill:YEL,bold:true,fmt:'hh:mm'});
+        else put(12,{formula:'N'+(rn-1)+'+O'+(rn-1),result:r.jam/1440},{fmt:'hh:mm'});
+        put(13,{formula:'VLOOKUP(I'+rn+',Durasi!$A:$B,2,0)',result:r.dur.key/1440},{fmt:'h:mm;@'});
+        put(14,{formula:'L'+rn+'+M'+rn,result:r.selesai/1440},{fmt:'hh:mm'});
+        if(last) put(15,null); else put(15,{formula:'VLOOKUP(J'+rn+',Durasi!$E:$F,2,0)',result:r.key/1440},{fmt:'h:mm;@'});
+        const c=row.getCell(16);c.value=descRow(r);c.font={name:F,size:9,color:{argb:'FF5B6B78'}};
+      });
+      hr+=d.rows.length+4;
+    }
+  }
+  const du=wb.addWorksheet('Durasi');
+  du.getColumn(1).width=24;du.getColumn(2).width=10;du.getColumn(5).width=26;du.getColumn(6).width=10;
+  [['A1','Klasifikasi durasi dioutlet'],['E1','Klasifikasi durasi Perjalanan'],['A2','Menit'],['E2','Menit']].forEach(([a,v])=>{const c=du.getCell(a);c.value=v;c.font={name:F,size:10,bold:true};});
+  OUT_KEYS.forEach((k,i)=>{du.getCell(3+i,1).value=k;const c=du.getCell(3+i,2);c.value=k/1440;c.numFmt='h:mm;@';});
+  TRV_KEYS.slice(0,20).forEach((k,i)=>{du.getCell(3+i,5).value=k;const c=du.getCell(3+i,6);c.value=k/1440;c.numFmt='h:mm;@';});
+  du.getCell(23,5).value='Istirahat';du.getCell(23,6).value=60/1440;du.getCell(23,6).numFmt='h:mm;@';
+  TRV_KEYS.slice(20).forEach((k,i)=>{du.getCell(24+i,5).value=k;const c=du.getCell(24+i,6);c.value=k/1440;c.numFmt='h:mm;@';});
+  du.eachRow(r=>r.eachCell(c=>{c.font=c.font&&c.font.bold?c.font:{name:F,size:10};}));
+  return wb;
+}
+/* ===== CORE:END ===== */
+
+/* ===== UI ===== */
+const $=s=>document.querySelector(s);
+const S={jks:null,rfb:null,jksName:'',rfbName:'',sel:new Set(),plan:[],sm:null,wd:null,running:false,ctx:null};
+const fetcher=u=>fetch(u);
+function toast(t,ms=3200){const e=$('#toast');e.textContent=t;e.style.display='block';clearTimeout(toast.h);toast.h=setTimeout(()=>e.style.display='none',ms);}
+const nf=n=>Number(n).toLocaleString('id-ID');
+async function readXlsx(file){
+  const wb=XLSX.read(await file.arrayBuffer(),{type:'array',cellDates:true});
+  return XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:'',raw:true});
+}
+function wireDrop(id,handler){
+  const el=$(id),inp=el.querySelector('input');
+  inp.addEventListener('change',()=>inp.files[0]&&handler(inp.files[0]));
+  ['dragenter','dragover'].forEach(e=>el.addEventListener(e,ev=>{ev.preventDefault();el.classList.add('over');}));
+  ['dragleave','drop'].forEach(e=>el.addEventListener(e,ev=>{ev.preventDefault();el.classList.remove('over');}));
+  el.addEventListener('drop',ev=>{const f=ev.dataTransfer.files[0];if(f)handler(f);});
+}
+wireDrop('#dJks',async f=>{
+  try{
+    S.jks=readJKS(await readXlsx(f));S.jksName=f.name;
+    const ids=[...new Set(S.jks.map(r=>r.idS))];S.sel=new Set(ids);
+    $('#dJks').classList.add('ok');$('#tJks').textContent=f.name+' · '+nf(S.jks.length)+' baris, '+ids.length+' salesman';
+    renderSm();updGo();
+  }catch(e){toast(e.message,5000);}
+});
+wireDrop('#dRfb',async f=>{
+  try{
+    S.rfb=readRFB(await readXlsx(f));S.rfbName=f.name;
+    const ds=[...new Set(S.rfb.map(r=>r.dateStr))].sort();
+    $('#dRfb').classList.add('ok');$('#tRfb').textContent=f.name+' · '+nf(S.rfb.length)+' baris, '+fmtD(ds[0])+' sampai '+fmtD(ds[ds.length-1]);
+    renderSm();updGo();
+  }catch(e){toast(e.message,5000);}
+});
+function renderSm(){
+  if(!S.jks)return;
+  const meta=new Map();
+  for(const r of S.jks){const m=meta.get(r.idS)||meta.set(r.idS,{idS:r.idS,nama:r.nama,tipe:r.tipeSales,n:0}).get(r.idS);m.n++;}
+  const rfbN=new Map();if(S.rfb)for(const v of S.rfb)rfbN.set(v.idS,v.nama);
+  $('#smList').innerHTML=[...meta.values()].map(m=>{
+    let tg='';
+    if(S.rfb){ if(!rfbN.has(m.idS))tg='<span class="tg">tanpa RFB</span>'; else if(rfbN.get(m.idS)!==m.nama)tg='<span class="tg" title="Nama di Route Feedback berbeda untuk Id yang sama">RFB: '+esc(rfbN.get(m.idS).split(' ')[0])+'</span>'; }
+    return '<label class="sm"><input type="checkbox" data-id="'+m.idS+'" '+(S.sel.has(m.idS)?'checked':'')+'><span class="n"><b>'+esc(m.nama)+'</b><small>'+esc((m.tipe||'').replace('Sales Representative ',''))+' · '+m.n+' baris</small></span>'+tg+'</label>';
+  }).join('');
+}
+$('#smList').addEventListener('change',e=>{const id=e.target.dataset.id;if(!id)return;e.target.checked?S.sel.add(id):S.sel.delete(id);updGo();});
+$('#selAll').onclick=()=>{if(!S.jks)return;S.sel=new Set(S.jks.map(r=>r.idS));renderSm();updGo();};
+$('#selNone').onclick=()=>{S.sel.clear();renderSm();updGo();};
+function updGo(){$('#go').disabled=!S.jks||!S.sel.size||S.running;}
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* settings persistence */
+const SET_IDS=['sWeek','sStatus','sOut','sStart','sEnd','sFactor','sBase'],CHK_IDS=['sSkip','sAnch'];
+try{const s=JSON.parse(localStorage.getItem('jksPlannerSet')||'{}');SET_IDS.forEach(i=>{if(s[i]!=null)$('#'+i).value=s[i];});CHK_IDS.forEach(i=>{if(s[i]!=null)$('#'+i).checked=s[i];});}catch(e){}
+function saveSet(){try{const s={};SET_IDS.forEach(i=>s[i]=$('#'+i).value);CHK_IDS.forEach(i=>s[i]=$('#'+i).checked);localStorage.setItem('jksPlannerSet',JSON.stringify(s));}catch(e){}}
+[...SET_IDS,...CHK_IDS].forEach(i=>$('#'+i).addEventListener('change',saveSet));
+function opts(){
+  const t=v=>{const p=v.split(':');return (+p[0])*60+(+p[1]||0);};
+  return {week:$('#sWeek').value,status:$('#sStatus').value,outlier:+$('#sOut').value||90,skipNonVisit:$('#sSkip').checked,anchorSkip:$('#sAnch').checked,
+    startFallback:t($('#sStart').value||'08:00'),endLimit:t($('#sEnd').value||'17:00'),factor:+$('#sFactor').value||1,base:$('#sBase').value.trim()||'https://router.project-osrm.org'};
+}
+
+/* run */
+function setProg(i,n,t){const p=$('#prog');p.style.display=i<n?'block':'none';p.firstElementChild.style.width=(n?i/n*100:0)+'%';const pt=$('#progT');pt.style.display=i<n?'block':'none';pt.textContent=t||'';}
+async function solveOne(sm,d){
+  try{await solveDay(d,sm.idS,S.ctx);}catch(e){d.status='error';d.err=e.message||String(e);}
+}
+$('#go').onclick=async()=>{
+  const o=opts();S.running=true;updGo();
+  const rfb=S.rfb||[];
+  const durModel=buildDurModel(rfb,o);
+  S.ctx={base:o.base,factor:o.factor,fetcher,durModel,o};
+  S.plan=planDays(S.jks,rfb,[...S.sel],o);
+  if(!S.plan.length){toast('Tidak ada rute untuk salesman dan aturan yang dipilih.');S.running=false;updGo();return;}
+  S.sm=S.plan[0].idS;S.wd=S.plan[0].days[0].wd;renderStage();
+  const all=S.plan.flatMap(sm=>sm.days.map(d=>[sm,d]));let i=0;
+  for(const [sm,d] of all){
+    setProg(i,all.length,'Menghitung '+sm.nama+' · '+d.hari+' ('+(i+1)+' dari '+all.length+')');
+    await solveOne(sm,d);i++;renderStage();
+    if(d.status==='error'&&/jangkau|429|membatasi/i.test(d.err)){
+      for(const [sm2,d2] of all.slice(i)){d2.status='error';d2.err=d.err;}
+      toast('Server OSRM bermasalah. Sisa hari ditandai gagal, silakan coba lagi.',5000);break;
+    }
+    await sleep(250);
+  }
+  setProg(1,1,'');S.running=false;updGo();renderStage();
+  const bad=all.filter(([,d])=>d.status==='error').length;
+  toast(bad?bad+' hari gagal dihitung.':'Selesai. '+all.length+' hari rute siap diexport.');
+};
+
+/* render */
+function emptyHtml(){
+  return '<div class="empty"><h1>Dari urutan toko ke jam kunjungan, otomatis</h1><p>Upload JKS Genap dan Route Feedback, pilih salesman, lalu hitung. Toko pertama tiap hari diambil dari Route Feedback, urutan berikutnya dari toko terdekat berdasarkan waktu tempuh jalan, dan hasilnya diexport ke format Excel Time Management Salesman.</p>'
+  +'<div class="tl"><div class="strip"><i class="o" style="width:14%"></i><i class="t" style="width:6%"></i><i class="o" style="width:9%"></i><i class="t" style="width:4%"></i><i class="o" style="width:11%"></i><i class="t" style="width:9%"></i><i class="o" style="width:9%"></i><i class="t" style="width:5%"></i><i class="o" style="width:14%"></i><i class="t" style="width:3%"></i><i class="o" style="width:16%"></i></div><div class="ax"><span>Toko pertama</span><span>Toko terakhir</span></div></div>'
+  +'<div class="lg"><span><s style="background:var(--blue)"></s>Di toko</span><span><s style="background:var(--org)"></s>Di jalan</span></div></div>';
+}
+function dotCls(d){return d.status==='ok'?'ok':d.status==='est'?'est':d.status==='error'?'err':'';}
+function renderStage(){
+  const st=$('#stage');
+  if(!S.plan.length){st.innerHTML=emptyHtml();return;}
+  const all=S.plan.flatMap(sm=>sm.days),nOk=all.filter(d=>d.status==='ok'||d.status==='est').length;
+  const nStops=all.reduce((a,d)=>a+d.stops.length,0);
+  const sm=S.plan.find(x=>x.idS===S.sm)||S.plan[0];
+  const day=sm.days.find(d=>d.wd===S.wd)||sm.days[0];
+  let h='<div class="bar"><span class="st"><b>'+S.plan.length+'</b> salesman</span><span class="st"><b>'+all.length+'</b> hari rute</span><span class="st"><b>'+nf(nStops)+'</b> toko</span><span class="st"><b>'+nOk+'/'+all.length+'</b> sudah dihitung</span><span class="sp"></span>'
+   +'<button class="btn sec sm2" data-act="expOne"'+(nOk?'':' disabled')+'>Export '+esc(sm.nama.split(' ')[0])+'</button><button class="btn sm2" data-act="expAll"'+(nOk?'':' disabled')+'>Export semua salesman</button></div>';
+  h+='<div class="chips">'+S.plan.map(x=>'<button class="chip'+(x.idS===sm.idS?' on':'')+'" data-sm="'+x.idS+'"><b>'+esc(x.nama)+'</b><small>'+x.days.length+' hari · '+x.days.reduce((a,d)=>a+d.stops.length,0)+' toko'+(x.rfbNama&&x.rfbNama!==x.nama?' · RFB: '+esc(x.rfbNama.split(' ')[0]):'')+'</small></button>').join('')+'</div>';
+  h+='<div class="chips">'+sm.days.map(d=>'<button class="chip'+(d.wd===day.wd?' on':'')+'" data-wd="'+d.wd+'"><b><span class="dot '+dotCls(d)+'"></span>'+d.hari+'</b><small>'+(d.dateStr?fmtD(d.dateStr):'tanpa RFB')+' · '+d.stops.length+' toko</small></button>').join('')+'</div>';
+  h+=dayHtml(sm,day);
+  st.innerHTML=h;
+}
+function dayHtml(sm,d){
+  const o=S.ctx?S.ctx.o:opts();
+  let h='';
+  const a=d.anchor;
+  const sub=a.src==='rfb'?'Mulai '+fmtT(a.start)+' di '+esc(a.namaC)+' (Route Feedback '+fmtD(a.date)+')':'Tanpa Route Feedback, mulai '+fmtT(d.startMin)+' dari toko No Urut terkecil';
+  if(d.status==='error'){
+    return '<div class="dayhead"><div><h3>'+d.hari+'</h3><div class="kp">'+sub+'</div></div></div><div class="alert err"><b>Gagal menghitung hari ini.</b> '+esc(d.err||'')+'<div class="ac"><button class="btn sm2" data-act="retry">Coba lagi</button><button class="btn sm2 org" data-act="est">Pakai estimasi garis lurus</button></div></div>';
+  }
+  if(d.status==='pending') return '<div class="dayhead"><div><h3>'+d.hari+'</h3><div class="kp">'+sub+'</div></div></div><div class="alert warn">Belum dihitung.</div>';
+  const late=d.end>o.endLimit;
+  h+='<div class="dayhead"><div><h3>'+d.hari+(d.dateStr?' <span class="mu" style="font:400 13px var(--body)">'+fmtD(d.dateStr)+'</span>':'')+'</h3><div class="kp">'+sub+'</div></div>'
+   +'<div class="kp"><span><b>'+d.stops.length+'</b> toko</span><span>di toko <b>'+fmtH(d.totOut)+'</b></span><span>di jalan <b>'+fmtH(d.totTrv)+'</b></span><span'+(late?' class="late"':'')+'>selesai <b'+(late?' class="late"':'')+'>'+fmtT(d.end)+'</b>'+(late?' (lewat '+fmtT(o.endLimit)+')':'')+'</span></div></div>';
+  if(d.status==='est')h+='<div class="alert est"><b>Waktu tempuh hari ini estimasi garis lurus, bukan rute jalan.</b> Hasil export ditandai. <div class="ac"><button class="btn sm2" data-act="retry">Hitung ulang dengan OSRM</button></div></div>';
+  d.warn.forEach(w=>h+='<div class="alert warn">'+esc(w)+'</div>');
+  const tot=d.end-d.rows[0].jam;
+  h+='<div class="tl"><div class="strip">'+d.rows.map(r=>'<i class="o" style="width:'+(r.dur.key/tot*100)+'%" title="'+esc(r.namaP)+' '+fmtT(r.jam)+'-'+fmtT(r.selesai)+'"></i>'+(r.key!=null?'<i class="t" style="width:'+(r.key/tot*100)+'%" title="Tempuh '+r.key+' menit"></i>':'')).join('')+'</div><div class="ax"><span>'+fmtT(d.rows[0].jam)+'</span><span>'+fmtT(d.end)+'</span></div></div>';
+  h+='<div class="lg"><span><s style="background:var(--blue)"></s>Di toko</span><span><s style="background:var(--org)"></s>Di jalan</span></div>';
+  h+='<div class="tbw"><table><thead><tr><th class="r">No</th><th>Toko</th><th>Alamat</th><th class="r">Di toko (mnt)</th><th class="r">Ke toko berikut (mnt)</th><th class="r">Jam</th><th class="r">Selesai</th></tr></thead><tbody>';
+  h+=d.rows.map(r=>'<tr><td class="r">'+r.seq+'</td><td class="nm"><b>'+esc(r.namaP)+'</b>'+(r.isAnchor?'<span class="tag p">toko pertama</span>':r.seq===0?'<span class="tag p">titik awal</span>':'')+(r.outsidePlan?'<span class="tag x">di luar JKS hari ini</span>':'')+'<small>'+esc(r.idP)+'</small></td><td class="ad" title="'+esc(r.alamat)+'">'+esc(r.alamat)+'</td>'
+    +'<td class="r">'+r.dur.key+(r.dur.src==='rfb'?' <span class="mu">('+r.dur.n+'x)</span>':'<span class="tag d">'+(r.dur.src==='salesman'?'median salesman':r.dur.src==='global'?'median umum':'default')+'</span>')+'</td>'
+    +'<td class="r">'+(r.key==null?'<span class="mu">-</span>':r.key+' <span class="mu">('+r.leg.toFixed(1).replace('.',',')+')</span>')+'</td><td class="r"><b>'+fmtT(r.jam)+'</b></td><td class="r">'+fmtT(r.selesai)+'</td></tr>').join('');
+  h+='</tbody></table></div><p class="note" style="margin:6px 2px">Angka dalam kurung di kolom tempuh adalah waktu asli sebelum dibulatkan ke klasifikasi. Tempuh dihitung dari OSRM dikali faktor '+String(o.factor).replace('.',',')+'.</p>';
+  return h;
+}
+const fmtH=m=>{const h=Math.floor(m/60),mm=Math.round(m%60);return h?h+' j '+mm+' m':mm+' m';};
+$('#stage').addEventListener('click',async e=>{
+  const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.sm){S.sm=b.dataset.sm;const sm=S.plan.find(x=>x.idS===S.sm);if(!sm.days.some(d=>d.wd===S.wd))S.wd=sm.days[0].wd;renderStage();return;}
+  if(b.dataset.wd!==undefined){S.wd=+b.dataset.wd;renderStage();return;}
+  const sm=S.plan.find(x=>x.idS===S.sm),d=sm&&sm.days.find(x=>x.wd===S.wd),act=b.dataset.act;
+  if(act==='retry'||act==='est'){d.useEst=act==='est';d.status='pending';renderStage();await solveOne(sm,d);renderStage();}
+  if(act==='expOne')exportList([sm],'Time_Management_'+sm.nama.replace(/\s+/g,'_'));
+  if(act==='expAll')exportList(S.plan,'Time_Management_Semua_Salesman');
+});
+async function exportList(list,name){
+  const ready=list.map(sm=>({...sm,days:sm.days.filter(d=>d.status==='ok'||d.status==='est')})).filter(sm=>sm.days.length);
+  if(!ready.length){toast('Belum ada hari yang selesai dihitung.');return;}
+  const skipped=list.reduce((a,sm)=>a+sm.days.filter(d=>d.status==='error'||d.status==='pending').length,0);
+  const wb=buildWorkbook(ExcelJS,ready);
+  const buf=await wb.xlsx.writeBuffer();
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));
+  a.download=name+'.xlsx';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+  toast(skipped?'Diexport. '+skipped+' hari yang gagal tidak ikut.':'Excel diunduh.');
+}
+
+/* kalibrasi: bandingkan OSRM dengan file Rute Kunjungan (RutaMap) */
+wireDrop('#dCal',async f=>{
+  const res=$('#calRes');res.style.display='block';res.textContent='Membaca file...';
+  try{
+    const rows=await readXlsx(f);const g=mkGet(Object.keys(rows[0]),{lat:['latitude'],lon:['longitude'],t:['waktutempuhmenit','waktutempuh'],urut:['urutan']});
+    if(!g.map.lat||!g.map.lon||!g.map.t)throw new Error('Kolom Latitude, Longitude, dan Waktu tempuh (menit) tidak ditemukan.');
+    const pts=rows.map(r=>({lat:parseFloat(g.get(r,'lat')),lon:parseFloat(g.get(r,'lon')),t:parseFloat(g.get(r,'t'))})).filter(p=>Number.isFinite(p.lat)&&Number.isFinite(p.lon));
+    const o=opts(),legs=[];
+    for(let s=0;s<pts.length-1;s+=49){
+      const ch=pts.slice(s,s+50);if(ch.length<2)break;
+      res.textContent='Menghubungi OSRM... '+Math.min(s+50,pts.length)+' dari '+pts.length+' titik';
+      const M=await osrmMatrix(ch,o.base,fetcher);
+      for(let i=0;i<ch.length-1;i++)legs.push({osrm:M[i][i+1]/60,ref:ch[i+1].t});
+      await sleep(300);
+    }
+    const use=legs.filter(l=>l.osrm>0.5&&l.ref>0);
+    if(use.length<5)throw new Error('Data pembanding terlalu sedikit.');
+    const ratios=use.map(l=>l.ref/l.osrm),fSum=use.reduce((a,l)=>a+l.ref,0)/use.reduce((a,l)=>a+l.osrm,0),fMed=median(ratios);
+    const mae=f=>use.reduce((a,l)=>a+Math.abs(l.osrm*f-l.ref),0)/use.length;
+    res.innerHTML='<b>'+use.length+' ruas dibandingkan.</b><br>Rata-rata RutaMap '+(use.reduce((a,l)=>a+l.ref,0)/use.length).toFixed(1).replace('.',',')+' mnt, OSRM '+(use.reduce((a,l)=>a+l.osrm,0)/use.length).toFixed(1).replace('.',',')+' mnt per ruas.<br>Faktor saran: <b>'+fSum.toFixed(2).replace('.',',')+'</b> (median '+fMed.toFixed(2).replace('.',',')+'). Selisih rata-rata '+mae(fSum).toFixed(1).replace('.',',')+' mnt per ruas dengan faktor itu, '+mae(1).toFixed(1).replace('.',',')+' mnt tanpa faktor.<br><button class="btn sm2" id="useF" style="margin-top:6px">Pakai faktor '+fSum.toFixed(2).replace('.',',')+'</button>';
+    $('#useF').onclick=()=>{$('#sFactor').value=fSum.toFixed(2);saveSet();toast('Faktor diubah ke '+fSum.toFixed(2));};
+    $('#dCal').classList.add('ok');$('#tCal').textContent=f.name;
+  }catch(e){res.textContent='Gagal: '+e.message;}
+});
+renderStage();
+</script>
+</body>
+</html>
